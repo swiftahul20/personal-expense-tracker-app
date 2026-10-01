@@ -2,7 +2,7 @@
 import { AlertCircle, Check, Trash2, X } from "@lucide/vue";
 import Multiselect from "@vueform/multiselect";
 import "@vueform/multiselect/themes/default.css";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, nextTick, reactive, ref, watch } from "vue";
 import { z } from "zod";
 import { useCategoriesStore } from "../stores/categories";
 import { useExpensesStore } from "../stores/expenses";
@@ -38,6 +38,9 @@ const categoriesStore = useCategoriesStore();
 const toast = useToastStore();
 const busy = ref(false);
 const error = ref("");
+const dialogRef = ref<HTMLElement | null>(null);
+const closeButtonRef = ref<HTMLButtonElement | null>(null);
+let previouslyFocused: HTMLElement | null = null;
 const form = reactive({
   amount: "",
   category_id: "",
@@ -95,6 +98,38 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      previouslyFocused = document.activeElement as HTMLElement | null;
+      void nextTick(() => closeButtonRef.value?.focus());
+    } else {
+      previouslyFocused?.focus();
+      previouslyFocused = null;
+    }
+  },
+);
+
+function trapFocus(event: KeyboardEvent) {
+  if (event.key !== "Tab" || !dialogRef.value) return;
+  const focusable = Array.from(
+    dialogRef.value.querySelectorAll<HTMLElement>(
+      "button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex='-1'])",
+    ),
+  );
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 watch(
   () => form.category_id,
@@ -189,10 +224,12 @@ async function remove() {
     @keydown.esc.window="emit('close')"
   >
     <section
+      ref="dialogRef"
       class="bottom-sheet expense-sheet"
       role="dialog"
       aria-modal="true"
       aria-labelledby="expense-sheet-title"
+      @keydown="trapFocus"
     >
       <div class="sheet-handle"></div>
       <div class="sheet-title-row">
@@ -205,6 +242,7 @@ async function remove() {
           </h2>
         </div>
         <button
+          ref="closeButtonRef"
           class="icon-button"
           type="button"
           aria-label="Close"

@@ -184,10 +184,44 @@ export const useExpensesStore = defineStore("expenses", () => {
       await loadSummaries();
       return;
     }
-    if (id) await api.updateExpense(id, input);
-    else await api.createExpense(input as CreateExpenseInput);
-    await loadExpenses();
-    await loadSummaries();
+    if (id) {
+      const index = expenses.value.findIndex((expense) => expense.id === id);
+      const previous = index === -1 ? undefined : { ...expenses.value[index] };
+      if (index !== -1) Object.assign(expenses.value[index], input);
+      try {
+        await api.updateExpense(id, input);
+        await loadExpenses(page.value);
+        await loadSummaries();
+      } catch (cause) {
+        if (index !== -1 && previous) expenses.value[index] = previous;
+        throw cause;
+      }
+      return;
+    }
+
+    const createInput = input as CreateExpenseInput;
+    const optimisticId = -Date.now();
+    const optimisticExpense: Expense = {
+      id: optimisticId,
+      amount: createInput.amount,
+      category_id: createInput.category_id,
+      sub_category_id: createInput.sub_category_id ?? null,
+      description: createInput.description ?? "",
+      date: createInput.date,
+    };
+    expenses.value.unshift(optimisticExpense);
+    totalCount.value += 1;
+    try {
+      await api.createExpense(createInput);
+      await loadExpenses(page.value);
+      await loadSummaries();
+    } catch (cause) {
+      expenses.value = expenses.value.filter(
+        (expense) => expense.id !== optimisticId,
+      );
+      totalCount.value = Math.max(0, totalCount.value - 1);
+      throw cause;
+    }
   }
 
   async function deleteExpense(id: number) {
@@ -195,7 +229,22 @@ export const useExpensesStore = defineStore("expenses", () => {
       const index = demoExpenses.findIndex((expense) => expense.id === id);
       if (index !== -1) demoExpenses.splice(index, 1);
     } else {
-      await api.deleteExpense(id);
+      const index = expenses.value.findIndex((expense) => expense.id === id);
+      const deleted = index === -1 ? undefined : expenses.value[index];
+      if (index !== -1) {
+        expenses.value.splice(index, 1);
+        totalCount.value = Math.max(0, totalCount.value - 1);
+      }
+      try {
+        await api.deleteExpense(id);
+        await loadExpenses(page.value);
+        await loadSummaries();
+      } catch (cause) {
+        if (deleted && index !== -1) expenses.value.splice(index, 0, deleted);
+        totalCount.value += deleted ? 1 : 0;
+        throw cause;
+      }
+      return;
     }
     await loadExpenses();
     await loadSummaries();

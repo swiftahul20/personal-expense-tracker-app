@@ -13,12 +13,14 @@ Changes planned for the next release go here.
 - Loading and disabled states for category controls in the expense form
 - Vitest unit-test scripts and coverage for expense filtering and CSV serialization
 - Duplicate-suppressed, capped toast notifications with pause-on-hover behavior
+- Focus management for expense and filter dialogs
 
 ### Changed
 
 - Expense save now compensates for a newly-created sub-category when the expense request fails
 - Moved preview sample expenses into `src/data/demo-data.ts`
 - Centralized API error parsing and expired-session redirects
+- Optimistic expense, category, and sub-category mutations with rollback on failure
 
 ### Fixed
 

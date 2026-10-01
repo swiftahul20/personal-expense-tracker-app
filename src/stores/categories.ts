@@ -127,27 +127,63 @@ export const useCategoriesStore = defineStore("categories", () => {
       }
       return;
     }
-    const category = id
-      ? await api.updateCategory(id, input)
-      : await api.createCategory(input);
     if (id) {
       const index = categories.value.findIndex((item) => item.id === id);
-      if (index !== -1)
-        categories.value[index] = {
-          ...category,
-          sub_categories: categories.value[index].sub_categories,
-        };
-    } else if ("sub_categories" in category)
-      categories.value.push(category as Category);
-    else categories.value.push({ ...category, sub_categories: [] });
+      const previous =
+        index === -1 ? undefined : { ...categories.value[index] };
+      if (index !== -1) categories.value[index].name = input.name;
+      try {
+        const category = await api.updateCategory(id, input);
+        if (index !== -1)
+          categories.value[index] = {
+            ...category,
+            sub_categories: categories.value[index].sub_categories,
+          };
+      } catch (cause) {
+        if (index !== -1 && previous) categories.value[index] = previous;
+        throw cause;
+      }
+      return;
+    }
+
+    const optimisticId = -Date.now();
+    categories.value.push({
+      id: optimisticId,
+      name: input.name,
+      sub_categories: [],
+    });
+    try {
+      const category = await api.createCategory(input);
+      const index = categories.value.findIndex(
+        (item) => item.id === optimisticId,
+      );
+      if (index !== -1) categories.value[index] = category;
+    } catch (cause) {
+      categories.value = categories.value.filter(
+        (category) => category.id !== optimisticId,
+      );
+      throw cause;
+    }
   }
 
   async function removeCategory(id: number) {
-    if (!auth.previewMode) await api.deleteCategory(id);
+    const index = categories.value.findIndex((item) => item.id === id);
+    const category = index === -1 ? undefined : categories.value[index];
+    const removedSubcategories = subcategories.value.filter(
+      (item) => item.category_id === id,
+    );
     categories.value = categories.value.filter((item) => item.id !== id);
     subcategories.value = subcategories.value.filter(
       (item) => item.category_id !== id,
     );
+    if (auth.previewMode || !category) return;
+    try {
+      await api.deleteCategory(id);
+    } catch (cause) {
+      categories.value.splice(index, 0, category);
+      subcategories.value.push(...removedSubcategories);
+      throw cause;
+    }
   }
 
   async function saveSubcategory(
@@ -171,27 +207,76 @@ export const useCategoriesStore = defineStore("categories", () => {
         return subcategory;
       }
     }
-    const subcategory = id
-      ? await api.updateSubCategory(input.category_id, id, input)
-      : await api.createSubCategory(input.category_id, input);
     if (id) {
       const index = subcategories.value.findIndex((item) => item.id === id);
-      if (index !== -1) subcategories.value[index] = subcategory;
+      const previous =
+        index === -1 ? undefined : { ...subcategories.value[index] };
+      if (index !== -1) subcategories.value[index].name = input.name;
       const category = categories.value.find(
-        (item) => item.id === subcategory.category_id,
+        (item) => item.id === input.category_id,
       );
       const nestedIndex = category?.sub_categories.findIndex(
         (item) => item.id === id,
       );
       if (category && nestedIndex !== undefined && nestedIndex !== -1)
-        category.sub_categories[nestedIndex] = subcategory;
-    } else {
-      subcategories.value.push(subcategory);
-      categories.value
-        .find((category) => category.id === subcategory.category_id)
-        ?.sub_categories.push(subcategory);
+        category.sub_categories[nestedIndex].name = input.name;
+      try {
+        const subcategory = await api.updateSubCategory(
+          input.category_id,
+          id,
+          input,
+        );
+        if (index !== -1) subcategories.value[index] = subcategory;
+        if (category && nestedIndex !== undefined && nestedIndex !== -1)
+          category.sub_categories[nestedIndex] = subcategory;
+      } catch (cause) {
+        if (index !== -1 && previous) subcategories.value[index] = previous;
+        if (
+          category &&
+          nestedIndex !== undefined &&
+          nestedIndex !== -1 &&
+          previous
+        )
+          category.sub_categories[nestedIndex] = previous;
+        throw cause;
+      }
+      return subcategories.value[index] ?? { ...input, id };
     }
-    return subcategory;
+
+    const optimisticId = -Date.now();
+    const optimisticSubcategory = { ...input, id: optimisticId };
+    subcategories.value.push(optimisticSubcategory);
+    categories.value
+      .find((category) => category.id === input.category_id)
+      ?.sub_categories.push(optimisticSubcategory);
+    try {
+      const subcategory = await api.createSubCategory(input.category_id, input);
+      const index = subcategories.value.findIndex(
+        (item) => item.id === optimisticId,
+      );
+      if (index !== -1) subcategories.value[index] = subcategory;
+      const category = categories.value.find(
+        (item) => item.id === input.category_id,
+      );
+      const nestedIndex = category?.sub_categories.findIndex(
+        (item) => item.id === optimisticId,
+      );
+      if (category && nestedIndex !== undefined && nestedIndex !== -1)
+        category.sub_categories[nestedIndex] = subcategory;
+      return subcategory;
+    } catch (cause) {
+      subcategories.value = subcategories.value.filter(
+        (item) => item.id !== optimisticId,
+      );
+      const category = categories.value.find(
+        (item) => item.id === input.category_id,
+      );
+      if (category)
+        category.sub_categories = category.sub_categories.filter(
+          (item) => item.id !== optimisticId,
+        );
+      throw cause;
+    }
   }
 
   async function removeSubcategory(id: number) {

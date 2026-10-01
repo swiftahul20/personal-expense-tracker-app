@@ -87,6 +87,8 @@ Category and expense data is cleared when the authenticated user changes or the 
 
 Toast messages suppress duplicates, keep at most four visible messages, and pause their timeout while hovered. If an access token and its refresh token both fail, the client clears the session and redirects to the login screen.
 
+Expense and taxonomy mutations update the interface immediately and restore the previous state if the API rejects the change. The expense and filter dialogs move focus into the dialog, keep keyboard focus contained while open, and return focus to the triggering control when closed.
+
 ## Project Structure
 
 ```text

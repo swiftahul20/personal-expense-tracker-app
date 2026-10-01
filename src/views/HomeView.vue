@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Pencil,
-  Search,
-  SlidersHorizontal,
-  X,
+    CalendarDays,
+    ChevronLeft,
+    ChevronRight,
+    Download,
+    Pencil,
+    Search,
+    SlidersHorizontal,
+    X,
 } from "@lucide/vue";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useCategoriesStore } from "../stores/categories";
 import { useExpensesStore } from "../stores/expenses";
 import type { Expense } from "../types";
@@ -18,10 +18,13 @@ const emit = defineEmits<{ edit: [expense: Expense] }>();
 const store = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 const filterOpen = ref(false);
+const filterButtonRef = ref<HTMLButtonElement | null>(null);
+const filterDialogRef = ref<HTMLElement | null>(null);
 const draftCategory = ref("");
 const draftFrom = ref("");
 const draftTo = ref("");
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
+let previousFilterFocus: HTMLElement | null = null;
 
 const today = new Date();
 const monthLabel = new Intl.DateTimeFormat("en", {
@@ -88,6 +91,39 @@ watch(
     searchTimer = setTimeout(() => store.loadExpenses(1), 250);
   },
 );
+
+watch(filterOpen, (open) => {
+  if (open) {
+    previousFilterFocus = document.activeElement as HTMLElement | null;
+    void nextTick(() =>
+      filterDialogRef.value
+        ?.querySelector<HTMLElement>("select, button, input")
+        ?.focus(),
+    );
+  } else {
+    previousFilterFocus?.focus();
+    previousFilterFocus = null;
+  }
+});
+
+function trapFilterFocus(event: KeyboardEvent) {
+  if (event.key !== "Tab" || !filterDialogRef.value) return;
+  const focusable = Array.from(
+    filterDialogRef.value.querySelectorAll<HTMLElement>(
+      "button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex='-1'])",
+    ),
+  );
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 function openFilters() {
   draftCategory.value = store.filters.category_id;
@@ -190,6 +226,7 @@ onMounted(async () => {
           <X :size="15" /></button
       ></label>
       <button
+        ref="filterButtonRef"
         class="filter-button"
         :class="{ 'has-filter': activeFilters }"
         type="button"
@@ -297,10 +334,12 @@ onMounted(async () => {
       @click.self="filterOpen = false"
     >
       <section
+        ref="filterDialogRef"
         class="bottom-sheet filter-sheet"
         role="dialog"
         aria-modal="true"
         aria-labelledby="filter-title"
+        @keydown="trapFilterFocus"
       >
         <div class="sheet-handle"></div>
         <div class="sheet-title-row">
