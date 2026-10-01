@@ -79,6 +79,14 @@ The frontend reads one public Vite environment variable:
 | ------------------- | ----------------------------------- | ----------------------- |
 | `VITE_API_BASE_URL` | Base URL of the Expense Tracker API | `http://localhost:8080` |
 
+Use only the API host in this variable. Do not include an endpoint path such as `/auth/login`; the client appends paths itself.
+
+For the current production API, the value format is:
+
+```env
+VITE_API_BASE_URL=https://01a0d77e-2ac4-781d-a870-26f4e9a39a72-8080.eur-1.aiven.app
+```
+
 The client attaches the access token to protected requests and attempts a refresh after an expired access token. The backend refresh endpoint must return both a new `access_token` and a new `refresh_token` because refresh tokens rotate on every use.
 
 ## Reliability Behavior
@@ -143,7 +151,9 @@ cp .env.production.example .env.production
 npm run build
 ```
 
-For hosted deployments, set `VITE_API_BASE_URL` in the provider's environment settings instead of committing an environment file. Vite injects public `VITE_*` values into the browser bundle, so they must contain URLs and public configuration only.
+For hosted deployments, set `VITE_API_BASE_URL` in the provider's environment settings instead of committing an environment file, then redeploy. Vite injects public `VITE_*` values into the browser bundle, so they must contain URLs and public configuration only.
+
+The backend must also allow the deployed frontend origin in its CORS configuration. A frontend cannot fix a missing backend CORS origin by changing its own environment variable.
 
 ## Deployment
 

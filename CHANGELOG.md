@@ -26,6 +26,8 @@ Changes planned for the next release go here.
 
 ### Fixed
 
+- Clarified that `VITE_API_BASE_URL` must be the backend host without an endpoint path
+
 ### Removed
 
 ## [1.0.0] - 2026-10-01
