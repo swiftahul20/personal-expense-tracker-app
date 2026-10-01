@@ -61,7 +61,7 @@ export const useAuthStore = defineStore("auth", () => {
       try {
         await api.logout(refreshToken);
       } catch {
-        // Local credentials are cleared even if the server is unavailable.
+        // unavailable
       }
     }
     clearTokens();

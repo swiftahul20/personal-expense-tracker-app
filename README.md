@@ -118,6 +118,58 @@ npm run build
 
 The generated files are placed in `dist/`. Configure `VITE_API_BASE_URL` in the hosting environment before building. Vite embeds `VITE_*` variables into the client bundle, so never place private keys or server secrets in them.
 
+## Environment Workflow
+
+Use environment files according to the target:
+
+| File                      | Use                               | Commit to Git? |
+| ------------------------- | --------------------------------- | -------------- |
+| `.env.example`            | Local development template        | Yes            |
+| `.env.local`              | Local machine values              | No             |
+| `.env.production.example` | Production configuration template | Yes            |
+| `.env.production`         | Local production build values     | No             |
+
+For a local production build, copy the production template and set the real API URL:
+
+```bash
+copy .env.production.example .env.production
+npm run build
+```
+
+On macOS or Linux:
+
+```bash
+cp .env.production.example .env.production
+npm run build
+```
+
+For hosted deployments, set `VITE_API_BASE_URL` in the provider's environment settings instead of committing an environment file. Vite injects public `VITE_*` values into the browser bundle, so they must contain URLs and public configuration only.
+
+## Deployment
+
+The application is a client-side Vue SPA. Build output is generated in `dist/`.
+
+### Vercel
+
+Create a Vercel project from the GitHub repository with:
+
+- Framework preset: `Vite`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Environment variable: `VITE_API_BASE_URL=https://your-production-api.example.com`
+
+Deployments are created automatically when the configured branch receives a push. Add the deployed frontend origin to the backend CORS allowlist.
+
+### Netlify
+
+Create a Netlify site from the GitHub repository with:
+
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Environment variable: `VITE_API_BASE_URL=https://your-production-api.example.com`
+
+The committed `public/_redirects` file keeps Vue Router routes working after a direct refresh. Add the deployed Netlify origin to the backend CORS allowlist.
+
 ## Testing
 
 Run the unit tests with:

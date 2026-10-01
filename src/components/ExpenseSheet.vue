@@ -187,7 +187,7 @@ async function save() {
       try {
         await categoriesStore.removeSubcategory(createdSubcategoryId);
       } catch {
-        // Preserve the expense error if compensating cleanup also fails.
+        //
       }
     }
     error.value =
@@ -276,7 +276,9 @@ async function remove() {
               :can-clear="false"
               :can-deselect="false"
               :placeholder="
-                categoriesStore.loading ? 'Loading categories...' : 'Select category'
+                categoriesStore.loading
+                  ? 'Loading categories...'
+                  : 'Select category'
               "
               class="taxonomy-multiselect" /></label
           ><label class="form-field"

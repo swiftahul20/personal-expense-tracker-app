@@ -14,6 +14,7 @@ Changes planned for the next release go here.
 - Vitest unit-test scripts and coverage for expense filtering and CSV serialization
 - Duplicate-suppressed, capped toast notifications with pause-on-hover behavior
 - Focus management for expense and filter dialogs
+- Production environment template and static-host SPA routing fallback
 
 ### Changed
 
@@ -21,6 +22,7 @@ Changes planned for the next release go here.
 - Moved preview sample expenses into `src/data/demo-data.ts`
 - Centralized API error parsing and expired-session redirects
 - Optimistic expense, category, and sub-category mutations with rollback on failure
+- Added Vercel and Netlify deployment guidance
 
 ### Fixed
 

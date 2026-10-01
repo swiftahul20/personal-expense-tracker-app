@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import {
-    CalendarDays,
-    ChevronLeft,
-    ChevronRight,
-    Download,
-    Pencil,
-    Search,
-    SlidersHorizontal,
-    X,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Pencil,
+  Search,
+  SlidersHorizontal,
+  X,
 } from "@lucide/vue";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useCategoriesStore } from "../stores/categories";
@@ -18,7 +18,6 @@ const emit = defineEmits<{ edit: [expense: Expense] }>();
 const store = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 const filterOpen = ref(false);
-const filterButtonRef = ref<HTMLButtonElement | null>(null);
 const filterDialogRef = ref<HTMLElement | null>(null);
 const draftCategory = ref("");
 const draftFrom = ref("");
@@ -226,7 +225,6 @@ onMounted(async () => {
           <X :size="15" /></button
       ></label>
       <button
-        ref="filterButtonRef"
         class="filter-button"
         :class="{ 'has-filter': activeFilters }"
         type="button"
