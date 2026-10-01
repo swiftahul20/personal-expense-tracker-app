@@ -19,6 +19,8 @@ const icons = {
         class="toast-message"
         :class="`toast-${message.kind}`"
         role="status"
+        @mouseenter="toast.pause(message.id)"
+        @mouseleave="toast.resume(message.id)"
       >
         <component :is="icons[message.kind]" :size="18" aria-hidden="true" />
         <p>{{ message.message }}</p>

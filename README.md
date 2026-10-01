@@ -85,6 +85,8 @@ The client attaches the access token to protected requests and attempts a refres
 
 Category and expense data is cleared when the authenticated user changes or the session expires. The expense form disables category controls while category data is loading. If a new sub-category must be created before an expense can be saved and the expense request fails, the frontend attempts to remove that new sub-category to avoid leaving unused taxonomy data behind.
 
+Toast messages suppress duplicates, keep at most four visible messages, and pause their timeout while hovered. If an access token and its refresh token both fail, the client clears the session and redirects to the login screen.
+
 ## Project Structure
 
 ```text

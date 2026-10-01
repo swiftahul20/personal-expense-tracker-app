@@ -19,6 +19,7 @@ export const useAuthStore = defineStore("auth", () => {
     clearTokens();
     user.value = null;
     previewMode.value = false;
+    window.dispatchEvent(new Event("auth-expired"));
   });
 
   async function bootstrap() {

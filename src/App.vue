@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChartNoAxesCombined, CirclePlus, House, UserRound } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
 import ExpenseSheet from "./components/ExpenseSheet.vue";
 import ToastViewport from "./components/ToastViewport.vue";
@@ -16,6 +16,15 @@ const sheetOpen = ref(false);
 const editingExpense = ref<Expense | null>(null);
 const isAuthPage = computed(
   () => route.name === "login" || route.name === "register",
+);
+
+function handleAuthExpired() {
+  if (route.name !== "login") void router.push({ name: "login" });
+}
+
+onMounted(() => window.addEventListener("auth-expired", handleAuthExpired));
+onUnmounted(() =>
+  window.removeEventListener("auth-expired", handleAuthExpired),
 );
 
 function addExpense() {
