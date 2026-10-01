@@ -111,6 +111,40 @@ The generated files are placed in `dist/`. Configure `VITE_API_BASE_URL` in the 
 
 See [api-documentation.md](api-documentation.md) for endpoint paths, request and response shapes, error statuses, pagination, CSV export, summaries, and CORS requirements.
 
+## Versioning and Release Workflow
+
+Release history is tracked in [CHANGELOG.md](CHANGELOG.md). Use one focused commit for each logical update, and keep unfinished work under the `Unreleased` section.
+
+For a normal update:
+
+1. Make one focused change.
+2. Add a short entry under `Unreleased` in `CHANGELOG.md`.
+3. Run `npm run build`.
+4. Commit the change with a descriptive message, such as `feat: add expense pagination` or `fix: reset stores on logout`.
+5. Push the commit to GitHub.
+
+For a release:
+
+1. Move the `Unreleased` entries into a new dated version section.
+2. Update the `version` field in `package.json`.
+3. Run `npm install` if the lockfile needs to reflect the version change.
+4. Run `npm run build`.
+5. Commit the release, for example `release: v1.1.0`.
+6. Create and push a matching Git tag:
+
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+Use semantic versioning:
+
+- Patch (`1.0.1`): bug fixes and small safe corrections
+- Minor (`1.1.0`): backwards-compatible features
+- Major (`2.0.0`): breaking changes
+
+Replace `<owner>/<repository>` in `CHANGELOG.md` with the real GitHub repository path after the repository URL is finalized.
+
 ## GitHub Checklist
 
 - Confirm `.env.local` is not staged

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import {
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Download,
   Pencil,
   Search,
   SlidersHorizontal,
@@ -82,7 +85,7 @@ watch(
   () => store.filters.search,
   () => {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => store.loadExpenses(), 250);
+    searchTimer = setTimeout(() => store.loadExpenses(1), 250);
   },
 );
 
@@ -98,7 +101,7 @@ function applyFilters() {
   store.filters.from = draftFrom.value;
   store.filters.to = draftTo.value;
   filterOpen.value = false;
-  store.loadExpenses();
+  store.loadExpenses(1);
 }
 
 function clearFilters() {
@@ -110,11 +113,19 @@ function clearFilters() {
   store.filters.to = "";
   store.resetFilters();
   filterOpen.value = false;
-  store.loadExpenses();
+  store.loadExpenses(1);
 }
 
 function retry() {
   void Promise.all([store.loadExpenses(), store.loadSummaries()]);
+}
+
+function previousPage() {
+  if (store.page > 1) void store.loadExpenses(store.page - 1);
+}
+
+function nextPage() {
+  if (store.page < store.totalPages) void store.loadExpenses(store.page + 1);
 }
 
 onMounted(async () => {
@@ -153,6 +164,15 @@ onMounted(async () => {
           Recent expenses <span>{{ store.totalCount }}</span>
         </h2>
       </div>
+      <button
+        class="icon-text-button"
+        type="button"
+        :disabled="store.exportLoading"
+        @click="store.exportExpenses"
+      >
+        <Download :size="15" />
+        <span>{{ store.exportLoading ? "Exporting" : "Export CSV" }}</span>
+      </button>
     </div>
     <div class="search-row">
       <label class="search-box"
@@ -246,6 +266,28 @@ onMounted(async () => {
         @click="clearFilters"
       >
         Clear filters
+      </button>
+    </div>
+
+    <div v-if="store.totalPages > 1" class="expense-pagination">
+      <button
+        class="pagination-button"
+        type="button"
+        aria-label="Previous page"
+        :disabled="store.page === 1 || store.loading"
+        @click="previousPage"
+      >
+        <ChevronLeft :size="16" />
+      </button>
+      <span>Page {{ store.page }} of {{ store.totalPages }}</span>
+      <button
+        class="pagination-button"
+        type="button"
+        aria-label="Next page"
+        :disabled="store.page === store.totalPages || store.loading"
+        @click="nextPage"
+      >
+        <ChevronRight :size="16" />
       </button>
     </div>
 

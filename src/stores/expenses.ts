@@ -102,6 +102,10 @@ export const useExpensesStore = defineStore("expenses", () => {
   const summaryLoading = ref(false);
   const summaryError = ref("");
   const totalCount = ref(0);
+  const page = ref(1);
+  const totalPages = ref(1);
+  const limit = 20;
+  const exportLoading = ref(false);
   const visibleExpenses = computed(() => expenses.value);
 
   function reset() {
@@ -111,6 +115,8 @@ export const useExpensesStore = defineStore("expenses", () => {
     days.value = [];
     filters.value = emptyFilters();
     totalCount.value = 0;
+    page.value = 1;
+    totalPages.value = 1;
     error.value = "";
     summaryError.value = "";
   }
@@ -120,9 +126,10 @@ export const useExpensesStore = defineStore("expenses", () => {
     () => reset(),
   );
 
-  async function loadExpenses() {
+  async function loadExpenses(requestedPage = page.value) {
     loading.value = true;
     error.value = "";
+    page.value = Math.max(1, requestedPage);
     try {
       if (auth.previewMode) {
         const query = filters.value;
@@ -146,13 +153,21 @@ export const useExpensesStore = defineStore("expenses", () => {
             (expense) => !query.to || expense.date.slice(0, 10) <= query.to,
           );
         totalCount.value = expenses.value.length;
+        totalPages.value = Math.max(1, Math.ceil(totalCount.value / limit));
+        const start = (page.value - 1) * limit;
+        expenses.value = expenses.value.slice(start, start + limit);
       } else {
-        const query = new URLSearchParams({ page: "1", limit: "100" });
+        const query = new URLSearchParams({
+          page: String(page.value),
+          limit: String(limit),
+        });
         for (const [key, value] of Object.entries(filters.value)) {
           if (value) query.set(key, value);
         }
         const result = await api.listExpenses(query);
         expenses.value = result.expenses;
+        page.value = result.page;
+        totalPages.value = result.total_pages;
         totalCount.value = result.total;
       }
     } catch (cause) {
@@ -160,6 +175,63 @@ export const useExpensesStore = defineStore("expenses", () => {
         cause instanceof Error ? cause.message : "Could not load expenses.";
     } finally {
       loading.value = false;
+    }
+  }
+
+  async function exportExpenses() {
+    exportLoading.value = true;
+    try {
+      const query = new URLSearchParams();
+      for (const [key, value] of Object.entries(filters.value)) {
+        if (value) query.set(key, value);
+      }
+      let blob: Blob;
+      if (auth.previewMode) {
+        const filtered = demoExpenses.filter(
+          (expense) =>
+            (!filters.value.category_id ||
+              String(expense.category_id) === filters.value.category_id) &&
+            (!filters.value.search ||
+              `${expense.description} ${expense.category_name ?? ""}`
+                .toLowerCase()
+                .includes(filters.value.search.toLowerCase())) &&
+            (!filters.value.from ||
+              expense.date.slice(0, 10) >= filters.value.from) &&
+            (!filters.value.to ||
+              expense.date.slice(0, 10) <= filters.value.to),
+        );
+        const csvEscape = (value: string | number) =>
+          `"${String(value).replaceAll('"', '""')}"`;
+        const rows = filtered.map((expense) =>
+          [
+            expense.id,
+            expense.amount,
+            expense.category_name ?? "",
+            expense.sub_category_name ?? "",
+            expense.description,
+            expense.date,
+          ]
+            .map(csvEscape)
+            .join(","),
+        );
+        blob = new Blob(
+          [
+            "ID,Amount,Category,Sub-Category,Description,Date\n",
+            rows.join("\n"),
+          ],
+          { type: "text/csv" },
+        );
+      } else {
+        blob = await api.exportExpenses(query);
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "expenses.csv";
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    } finally {
+      exportLoading.value = false;
     }
   }
 
@@ -264,8 +336,13 @@ export const useExpensesStore = defineStore("expenses", () => {
     summaryLoading,
     summaryError,
     totalCount,
+    page,
+    totalPages,
+    limit,
+    exportLoading,
     visibleExpenses,
     loadExpenses,
+    exportExpenses,
     loadSummaries,
     saveExpense,
     deleteExpense,

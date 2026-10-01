@@ -125,6 +125,41 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
+async function requestBlob(
+  path: string,
+  init: RequestInit = {},
+  canRefresh = true,
+): Promise<Blob> {
+  if (!API_BASE_URL) {
+    throw new ApiError(
+      "Add VITE_API_BASE_URL to .env.local to connect your expense API.",
+    );
+  }
+
+  const headers = new Headers(init.headers);
+  const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+
+  const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  if (response.status === 401 && canRefresh && path !== "/auth/refresh") {
+    if (await refreshTokens()) return requestBlob(path, init, false);
+    authFailureHandler?.();
+  }
+
+  if (!response.ok) {
+    let message = `Request failed (${response.status})`;
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error) message = body.error;
+    } catch {
+      // Keep the status-based message when the response is not JSON.
+    }
+    throw new ApiError(message, response.status);
+  }
+
+  return response.blob();
+}
+
 export const api = {
   request,
   login: (email: string, password: string) =>
@@ -145,6 +180,8 @@ export const api = {
     }),
   listExpenses: (query: URLSearchParams) =>
     request<ExpensePage>(`/expenses?${query.toString()}`),
+  exportExpenses: (query: URLSearchParams) =>
+    requestBlob(`/expenses/export?${query.toString()}`),
   getExpense: (id: number) => request<Expense>(`/expenses/${id}`),
   createExpense: (expense: CreateExpenseInput) =>
     request<Expense>("/expenses", {

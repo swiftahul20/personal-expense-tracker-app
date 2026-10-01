@@ -127,6 +127,47 @@ select:focus-visible {
   font-weight: 400;
 }
 
+.icon-text-button,
+.pagination-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--forest);
+  background: var(--white);
+  cursor: pointer;
+}
+
+.icon-text-button:hover,
+.pagination-button:hover:not(:disabled) {
+  background: var(--soft-mint);
+}
+
+.icon-text-button:disabled,
+.pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.expense-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 22px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pagination-button {
+  width: 36px;
+  padding: 0;
+}
+
 .search-box,
 .filter-button,
 .form-control,
