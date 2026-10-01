@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import { demoExpenses } from "../data/demo-data";
 import { api } from "../lib/api";
+import { expensesToCsv, filterExpenses } from "../lib/expense-utils";
 import type {
   CreateExpenseInput,
   Expense,
@@ -9,79 +11,6 @@ import type {
   UpdateExpenseInput,
 } from "../types";
 import { useAuthStore } from "./auth";
-
-export const demoExpenses: Expense[] = [
-  {
-    id: 1,
-    amount: 128000,
-    category_id: 1,
-    category_name: "Food",
-    sub_category_id: 1,
-    sub_category_name: "Coffee & lunch",
-    description: "Slow morning at Kurasu",
-    date: "2026-09-27T09:30:00.000Z",
-  },
-  {
-    id: 2,
-    amount: 45000,
-    category_id: 2,
-    category_name: "Transport",
-    sub_category_id: 2,
-    sub_category_name: "Ride share",
-    description: "Ride to the studio",
-    date: "2026-09-26T08:10:00.000Z",
-  },
-  {
-    id: 3,
-    amount: 342000,
-    category_id: 3,
-    category_name: "Home",
-    sub_category_id: 3,
-    sub_category_name: "Groceries",
-    description: "Sunday market run",
-    date: "2026-09-25T11:45:00.000Z",
-  },
-  {
-    id: 4,
-    amount: 89000,
-    category_id: 1,
-    category_name: "Food",
-    sub_category_id: 4,
-    sub_category_name: "Dinner",
-    description: "Noodles for dinner",
-    date: "2026-09-24T18:15:00.000Z",
-  },
-  {
-    id: 5,
-    amount: 215000,
-    category_id: 4,
-    category_name: "Wellbeing",
-    sub_category_id: 5,
-    sub_category_name: "Fitness",
-    description: "Monthly climbing pass",
-    date: "2026-09-22T14:00:00.000Z",
-  },
-  {
-    id: 6,
-    amount: 76000,
-    category_id: 2,
-    category_name: "Transport",
-    sub_category_id: 6,
-    sub_category_name: "Transit",
-    description: "Weekly metro top-up",
-    date: "2026-09-20T07:20:00.000Z",
-  },
-  {
-    id: 7,
-    amount: 156000,
-    category_id: 5,
-    category_name: "Shopping",
-    sub_category_id: 7,
-    sub_category_name: "Books",
-    description: "A little night reading",
-    date: "2026-09-18T15:40:00.000Z",
-  },
-];
 
 const emptyFilters = (): ExpenseFilters => ({
   category_id: "",
@@ -132,30 +61,11 @@ export const useExpensesStore = defineStore("expenses", () => {
     page.value = Math.max(1, requestedPage);
     try {
       if (auth.previewMode) {
-        const query = filters.value;
-        expenses.value = demoExpenses
-          .filter(
-            (expense) =>
-              !query.category_id ||
-              String(expense.category_id) === query.category_id,
-          )
-          .filter(
-            (expense) =>
-              !query.search ||
-              `${expense.description} ${expense.category_name ?? ""}`
-                .toLowerCase()
-                .includes(query.search.toLowerCase()),
-          )
-          .filter(
-            (expense) => !query.from || expense.date.slice(0, 10) >= query.from,
-          )
-          .filter(
-            (expense) => !query.to || expense.date.slice(0, 10) <= query.to,
-          );
-        totalCount.value = expenses.value.length;
+        const filtered = filterExpenses(demoExpenses, filters.value);
+        totalCount.value = filtered.length;
         totalPages.value = Math.max(1, Math.ceil(totalCount.value / limit));
         const start = (page.value - 1) * limit;
-        expenses.value = expenses.value.slice(start, start + limit);
+        expenses.value = filtered.slice(start, start + limit);
       } else {
         const query = new URLSearchParams({
           page: String(page.value),
@@ -187,38 +97,8 @@ export const useExpensesStore = defineStore("expenses", () => {
       }
       let blob: Blob;
       if (auth.previewMode) {
-        const filtered = demoExpenses.filter(
-          (expense) =>
-            (!filters.value.category_id ||
-              String(expense.category_id) === filters.value.category_id) &&
-            (!filters.value.search ||
-              `${expense.description} ${expense.category_name ?? ""}`
-                .toLowerCase()
-                .includes(filters.value.search.toLowerCase())) &&
-            (!filters.value.from ||
-              expense.date.slice(0, 10) >= filters.value.from) &&
-            (!filters.value.to ||
-              expense.date.slice(0, 10) <= filters.value.to),
-        );
-        const csvEscape = (value: string | number) =>
-          `"${String(value).replaceAll('"', '""')}"`;
-        const rows = filtered.map((expense) =>
-          [
-            expense.id,
-            expense.amount,
-            expense.category_name ?? "",
-            expense.sub_category_name ?? "",
-            expense.description,
-            expense.date,
-          ]
-            .map(csvEscape)
-            .join(","),
-        );
         blob = new Blob(
-          [
-            "ID,Amount,Category,Sub-Category,Description,Date\n",
-            rows.join("\n"),
-          ],
+          [expensesToCsv(filterExpenses(demoExpenses, filters.value))],
           { type: "text/csv" },
         );
       } else {

@@ -63,11 +63,13 @@ Open the URL printed by Vite, normally `http://localhost:5173`.
 
 ## Available Scripts
 
-| Command           | Description                                             |
-| ----------------- | ------------------------------------------------------- |
-| `npm run dev`     | Start the Vite development server                       |
-| `npm run build`   | Run Vue TypeScript checks and create a production build |
-| `npm run preview` | Preview the production build locally                    |
+| Command              | Description                                             |
+| -------------------- | ------------------------------------------------------- |
+| `npm run dev`        | Start the Vite development server                       |
+| `npm run build`      | Run Vue TypeScript checks and create a production build |
+| `npm run test`       | Run the Vitest test suite once                          |
+| `npm run test:watch` | Run Vitest in watch mode                                |
+| `npm run preview`    | Preview the production build locally                    |
 
 ## API Configuration
 
@@ -88,6 +90,7 @@ Category and expense data is cleared when the authenticated user changes or the 
 ```text
 src/
 	components/       Reusable UI components, including the expense form and toasts
+	data/             Preview-only sample data
 	lib/              API client and request/authentication handling
 	stores/           Pinia stores for auth, expenses, categories, themes, and toasts
 	views/            Login, home, insights, and profile screens
@@ -110,6 +113,16 @@ npm run build
 ```
 
 The generated files are placed in `dist/`. Configure `VITE_API_BASE_URL` in the hosting environment before building. Vite embeds `VITE_*` variables into the client bundle, so never place private keys or server secrets in them.
+
+## Testing
+
+Run the unit tests with:
+
+```bash
+npm run test
+```
+
+The current tests cover shared expense filtering and CSV serialization helpers. Preview data is kept in `src/data/demo-data.ts` so it is separate from the Pinia stores and can be reused by tests without importing store logic.
 
 ## Backend Documentation
 

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import { demoExpenses } from "../data/demo-data";
 import { api } from "../lib/api";
 import type {
   Category,
@@ -8,7 +9,6 @@ import type {
   SubCategoryInput,
 } from "../types";
 import { useAuthStore } from "./auth";
-import { demoExpenses } from "./expenses";
 
 export const useCategoriesStore = defineStore("categories", () => {
   const auth = useAuthStore();
