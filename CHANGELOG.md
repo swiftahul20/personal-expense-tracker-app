@@ -10,7 +10,11 @@ Changes planned for the next release go here.
 
 ### Added
 
+- Loading and disabled states for category controls in the expense form
+
 ### Changed
+
+- Expense save now compensates for a newly-created sub-category when the expense request fails
 
 ### Fixed
 

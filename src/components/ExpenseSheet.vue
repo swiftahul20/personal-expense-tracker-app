@@ -114,6 +114,7 @@ async function save() {
     return;
   }
   busy.value = true;
+  let createdSubcategoryId: number | null = null;
   try {
     const categoryId = Number(result.data.category_id);
     let subCategoryId: number | null = null;
@@ -126,6 +127,7 @@ async function save() {
           category_id: categoryId,
         });
         subCategoryId = subcategory.id;
+        createdSubcategoryId = subcategory.id;
       }
     }
     const input: CreateExpenseInput | UpdateExpenseInput = editing()
@@ -146,6 +148,13 @@ async function save() {
     toast.success(editing() ? "Expense updated." : "Expense added.");
     emit("saved");
   } catch (cause) {
+    if (createdSubcategoryId !== null) {
+      try {
+        await categoriesStore.removeSubcategory(createdSubcategoryId);
+      } catch {
+        // Preserve the expense error if compensating cleanup also fails.
+      }
+    }
     error.value =
       cause instanceof Error ? cause.message : "Could not save this expense.";
     toast.error(error.value);
@@ -223,10 +232,14 @@ async function remove() {
               id="expense-category"
               v-model="form.category_id"
               :options="categoryOptions"
+              :disabled="categoriesStore.loading || busy"
+              :aria-busy="categoriesStore.loading"
               :searchable="true"
               :can-clear="false"
               :can-deselect="false"
-              placeholder="Select category"
+              :placeholder="
+                categoriesStore.loading ? 'Loading categories...' : 'Select category'
+              "
               class="taxonomy-multiselect" /></label
           ><label class="form-field"
             ><span>Sub-category</span
@@ -235,15 +248,22 @@ async function remove() {
               v-if="subcategoryOptions.length"
               v-model="form.sub_category_id"
               :options="subcategoryOptions"
+              :disabled="categoriesStore.subcategoriesLoading || busy"
+              :aria-busy="categoriesStore.subcategoriesLoading"
               :searchable="true"
               :can-clear="true"
-              placeholder="Optional"
+              :placeholder="
+                categoriesStore.subcategoriesLoading
+                  ? 'Loading sub-categories...'
+                  : 'Optional'
+              "
               class="taxonomy-multiselect" /><input
               v-else
               v-model="form.sub_category_id"
               type="text"
               placeholder="Optional"
               maxlength="60"
+              :disabled="categoriesStore.subcategoriesLoading || busy"
           /></label>
         </div>
         <label class="form-field"

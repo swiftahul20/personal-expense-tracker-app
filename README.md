@@ -79,6 +79,10 @@ The frontend reads one public Vite environment variable:
 
 The client attaches the access token to protected requests and attempts a refresh after an expired access token. The backend refresh endpoint must return both a new `access_token` and a new `refresh_token` because refresh tokens rotate on every use.
 
+## Reliability Behavior
+
+Category and expense data is cleared when the authenticated user changes or the session expires. The expense form disables category controls while category data is loading. If a new sub-category must be created before an expense can be saved and the expense request fails, the frontend attempts to remove that new sub-category to avoid leaving unused taxonomy data behind.
+
 ## Project Structure
 
 ```text
