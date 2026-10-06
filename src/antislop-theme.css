@@ -731,24 +731,9 @@ select:focus-visible {
   background: var(--soft-mint);
 }
 
-.connection-status,
-.theme-action {
+.connection-status {
   color: var(--muted);
   font-size: 11px;
-}
-
-.appearance-setting {
-  width: 100%;
-  min-height: 68px;
-  border: 0;
-  border-top: 1px solid var(--line);
-  text-align: left;
-  background: transparent;
-  cursor: pointer;
-}
-
-.appearance-setting:hover {
-  background: var(--soft-mint);
 }
 
 .sign-out-button {

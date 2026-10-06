@@ -7,6 +7,7 @@ import type {
   Dashboard,
   Expense,
   ExpensePage,
+  ReceiptScanSuggestion,
   SubCategory,
   SubCategoryInput,
   SummaryItem,
@@ -109,7 +110,11 @@ async function request<T>(
   }
 
   const headers = new Headers(init.headers);
-  if (init.body && !headers.has("Content-Type"))
+  if (
+    init.body &&
+    !(init.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  )
     headers.set("Content-Type", "application/json");
 
   const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -177,6 +182,14 @@ export const api = {
     }),
   listExpenses: (query: URLSearchParams) =>
     request<ExpensePage>(`/expenses?${query.toString()}`),
+  scanReceipt: (image: File) => {
+    const body = new FormData();
+    body.append("image", image);
+    return request<ReceiptScanSuggestion>("/expenses/scan-receipt", {
+      method: "POST",
+      body,
+    });
+  },
   exportExpenses: (query: URLSearchParams) =>
     requestBlob(`/expenses/export?${query.toString()}`),
   getExpense: (id: number) => request<Expense>(`/expenses/${id}`),

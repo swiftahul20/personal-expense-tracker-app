@@ -4,10 +4,8 @@ import {
   Check,
   KeyRound,
   LogOut,
-  Moon,
   Pencil,
   Plus,
-  Sun,
   Trash2,
   X,
 } from "@lucide/vue";
@@ -15,12 +13,10 @@ import { computed, onMounted, ref } from "vue";
 import { getApiBaseUrl } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
 import { useCategoriesStore } from "../stores/categories";
-import { useThemeStore } from "../stores/theme";
 import { useToastStore } from "../stores/toast";
 
 const emit = defineEmits<{ "sign-out": [] }>();
 const auth = useAuthStore();
-const theme = useThemeStore();
 const categoriesStore = useCategoriesStore();
 const toast = useToastStore();
 const connected = computed(() => Boolean(getApiBaseUrl()));
@@ -185,23 +181,6 @@ onMounted(loadTaxonomy);
           ><small>{{ auth.user?.email }}</small></span
         ><span class="setting-detail">Current</span>
       </div>
-      <button
-        class="setting-row appearance-setting"
-        type="button"
-        :aria-pressed="theme.isDark"
-        @click="theme.toggle"
-      >
-        <span class="setting-icon green"
-          ><component :is="theme.isDark ? Sun : Moon" :size="17"
-        /></span>
-        <span
-          ><strong>Appearance</strong
-          ><small>{{
-            theme.isDark ? "Dark theme" : "Light theme"
-          }}</small></span
-        >
-        <span class="theme-action">Switch</span>
-      </button>
       <div class="setting-row">
         <span class="setting-icon green"><KeyRound :size="17" /></span
         ><span

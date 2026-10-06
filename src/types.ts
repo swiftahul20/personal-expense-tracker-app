@@ -46,6 +46,17 @@ export interface CreateExpenseInput {
   date: string;
 }
 
+export interface ReceiptScanSuggestion {
+  amount: number;
+  category_id: number | null;
+  category_name: string | null;
+  sub_category_id: number | null;
+  sub_category_name: string | null;
+  description: string;
+  date: string;
+  confidence_note?: string;
+}
+
 export interface UpdateExpenseInput {
   amount?: number;
   category_id?: number;

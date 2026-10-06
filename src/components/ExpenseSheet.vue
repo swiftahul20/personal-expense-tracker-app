@@ -1,13 +1,26 @@
 <script setup lang="ts">
-import { AlertCircle, Check, Trash2, X } from "@lucide/vue";
+import {
+  AlertCircle,
+  Camera,
+  Check,
+  LoaderCircle,
+  Trash2,
+  X,
+} from "@lucide/vue";
 import Multiselect from "@vueform/multiselect";
 import "@vueform/multiselect/themes/default.css";
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { z } from "zod";
+import { api } from "../lib/api";
 import { useCategoriesStore } from "../stores/categories";
 import { useExpensesStore } from "../stores/expenses";
 import { useToastStore } from "../stores/toast";
-import type { CreateExpenseInput, Expense, UpdateExpenseInput } from "../types";
+import type {
+  CreateExpenseInput,
+  Expense,
+  ReceiptScanSuggestion,
+  UpdateExpenseInput,
+} from "../types";
 
 const expenseSchema = z.object({
   amount: z
@@ -37,10 +50,15 @@ const store = useExpensesStore();
 const categoriesStore = useCategoriesStore();
 const toast = useToastStore();
 const busy = ref(false);
+const scanBusy = ref(false);
 const error = ref("");
+const scanError = ref("");
+const confidenceNote = ref("");
+const receiptInput = ref<HTMLInputElement | null>(null);
 const dialogRef = ref<HTMLElement | null>(null);
 const closeButtonRef = ref<HTMLButtonElement | null>(null);
 let previouslyFocused: HTMLElement | null = null;
+let categoryNeedsManualSelection = false;
 const form = reactive({
   amount: "",
   category_id: "",
@@ -68,6 +86,9 @@ const subcategoryOptions = computed(() =>
 
 function resetForm() {
   error.value = "";
+  scanError.value = "";
+  confidenceNote.value = "";
+  categoryNeedsManualSelection = false;
   if (props.expense) {
     form.amount = String(props.expense.amount);
     form.category_id = String(props.expense.category_id ?? "");
@@ -89,7 +110,7 @@ watch(
     if (props.open) {
       resetForm();
       void categoriesStore.loadCategories().then(() => {
-        if (!form.category_id) {
+        if (!form.category_id && !categoryNeedsManualSelection) {
           form.category_id = String(categoriesStore.categories[0]?.id ?? "");
         }
         void categoriesStore.loadSubcategories(Number(form.category_id));
@@ -139,6 +160,61 @@ watch(
       void categoriesStore.loadSubcategories(Number(categoryId));
   },
 );
+
+function applyReceiptSuggestion(suggestion: ReceiptScanSuggestion) {
+  const category =
+    suggestion.category_id === null
+      ? undefined
+      : categoriesStore.categories.find(
+          (item) => item.id === suggestion.category_id,
+        );
+  const subcategory =
+    category && suggestion.sub_category_id !== null
+      ? category.sub_categories.find(
+          (item) => item.id === suggestion.sub_category_id,
+        )
+      : undefined;
+
+  categoryNeedsManualSelection = !category;
+  form.amount = String(suggestion.amount);
+  form.category_id = category ? String(category.id) : "";
+  form.sub_category_id = "";
+  form.description = suggestion.description;
+  form.date = suggestion.date.slice(0, 10);
+  confidenceNote.value =
+    suggestion.confidence_note ||
+    (category
+      ? "Check the suggested details against your receipt before saving."
+      : "No existing category matched this receipt. Choose one before saving.");
+  error.value = "";
+
+  void nextTick(() => {
+    if (subcategory) form.sub_category_id = String(subcategory.id);
+  });
+}
+
+async function scanReceipt(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const image = input.files?.[0];
+  input.value = "";
+  if (!image) return;
+
+  scanError.value = "";
+  confidenceNote.value = "";
+  error.value = "";
+  scanBusy.value = true;
+  try {
+    await categoriesStore.loadCategories();
+    const suggestion = await api.scanReceipt(image);
+    applyReceiptSuggestion(suggestion);
+  } catch (cause) {
+    scanError.value =
+      cause instanceof Error ? cause.message : "Could not scan this receipt.";
+    toast.error(scanError.value);
+  } finally {
+    scanBusy.value = false;
+  }
+}
 
 async function save() {
   error.value = "";
@@ -251,6 +327,43 @@ async function remove() {
           <X :size="19" />
         </button>
       </div>
+      <div
+        v-if="!editing()"
+        class="receipt-scan"
+        :aria-busy="scanBusy"
+      >
+        <input
+          ref="receiptInput"
+          class="receipt-input"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          aria-label="Choose a receipt image"
+          :disabled="scanBusy || busy || categoriesStore.loading"
+          :aria-busy="scanBusy"
+          @change="scanReceipt"
+        />
+        <button
+          class="receipt-scan-button"
+          type="button"
+          :disabled="scanBusy || busy || categoriesStore.loading"
+          @click="receiptInput?.click()"
+        >
+          <LoaderCircle v-if="scanBusy" :size="18" class="receipt-spinner" />
+          <Camera v-else :size="18" />
+          <span>{{ scanBusy ? "Reading receipt…" : "Scan a receipt" }}</span>
+        </button>
+        <p class="receipt-scan-help">
+          Take a photo or choose an image. We’ll fill in a draft for you to
+          review.
+        </p>
+        <p v-if="confidenceNote" class="receipt-scan-note" role="status">
+          {{ confidenceNote }}
+        </p>
+        <p v-if="scanError" class="form-error receipt-scan-error" role="alert">
+          <AlertCircle :size="15" /> {{ scanError }}
+        </p>
+      </div>
       <form class="expense-form" novalidate @submit.prevent="save">
         <label class="amount-field"
           ><span>Amount</span>
@@ -261,6 +374,7 @@ async function remove() {
               type="number"
               inputmode="decimal"
               placeholder="0"
+              :disabled="scanBusy || busy"
             /></div
         ></label>
         <div class="form-grid">
@@ -270,7 +384,7 @@ async function remove() {
               id="expense-category"
               v-model="form.category_id"
               :options="categoryOptions"
-              :disabled="categoriesStore.loading || busy"
+              :disabled="categoriesStore.loading || busy || scanBusy"
               :aria-busy="categoriesStore.loading"
               :searchable="true"
               :can-clear="false"
@@ -288,7 +402,9 @@ async function remove() {
               v-if="subcategoryOptions.length"
               v-model="form.sub_category_id"
               :options="subcategoryOptions"
-              :disabled="categoriesStore.subcategoriesLoading || busy"
+              :disabled="
+                categoriesStore.subcategoriesLoading || busy || scanBusy
+              "
               :aria-busy="categoriesStore.subcategoriesLoading"
               :searchable="true"
               :can-clear="true"
@@ -303,7 +419,9 @@ async function remove() {
               type="text"
               placeholder="Optional"
               maxlength="60"
-              :disabled="categoriesStore.subcategoriesLoading || busy"
+              :disabled="
+                categoriesStore.subcategoriesLoading || busy || scanBusy
+              "
           /></label>
         </div>
         <label class="form-field"
@@ -313,9 +431,13 @@ async function remove() {
             type="text"
             placeholder="What was it for?"
             maxlength="140"
+            :disabled="scanBusy || busy"
         /></label>
         <label class="form-field"
-          ><span>Date</span><input v-model="form.date" type="date"
+          ><span>Date</span><input
+            v-model="form.date"
+            type="date"
+            :disabled="scanBusy || busy"
         /></label>
         <p v-if="error" class="form-error sheet-error" role="alert">
           <AlertCircle :size="15" /> {{ error }}
@@ -337,7 +459,11 @@ async function remove() {
             @click="emit('close')"
           >
             Cancel</button
-          ><button class="primary-button" type="submit" :disabled="busy">
+          ><button
+            class="primary-button"
+            type="submit"
+            :disabled="busy || scanBusy"
+          >
             <Check v-if="!busy" :size="16" />{{
               busy ? "Saving…" : editing() ? "Save changes" : "Save expense"
             }}

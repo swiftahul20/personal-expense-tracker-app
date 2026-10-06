@@ -251,6 +251,27 @@ Notes:
 
 ---
 
+### `POST /expenses/scan-receipt`
+Accepts one receipt image and returns a suggestion for the user to review. The result is **not saved**; use `POST /expenses` after the user confirms the details.
+
+**Request:** `multipart/form-data` with the image in the `image` field.
+
+**Response `200`:**
+```json
+{
+  "amount": 56000,
+  "category_id": 1,
+  "category_name": "Food",
+  "sub_category_id": 1,
+  "sub_category_name": "Dine-in",
+  "description": "Solaria - Nasi Goreng Spesial",
+  "date": "2026-09-27",
+  "confidence_note": "optional free-text note if extraction was uncertain"
+}
+```
+
+Category and sub-category IDs/names may be `null` when no existing category is a suitable match. Errors use the standard `{ "error": "..." }` response shape, including when the file is not a valid receipt image or the extracted response cannot be parsed.
+
 ### `GET /expenses`
 Paginated list, with optional filters.
 

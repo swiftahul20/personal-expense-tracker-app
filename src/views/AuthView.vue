@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { LockKeyhole, Mail } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, defineProps, ref } from "vue";
 import { useRouter } from "vue-router";
 import { getApiBaseUrl } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
@@ -14,6 +14,10 @@ const error = ref("");
 const busy = ref(false);
 const connected = Boolean(getApiBaseUrl());
 const registering = computed(() => props.mode === "register");
+const demoCredentials = {
+  email: "admin@admin.com",
+  password: "admin123",
+};
 
 async function submit() {
   error.value = "";
@@ -35,6 +39,12 @@ function preview() {
   auth.enterPreview();
   router.push("/");
 }
+
+function fillDemoCredentials() {
+  email.value = demoCredentials.email;
+  password.value = demoCredentials.password;
+  error.value = "";
+}
 </script>
 
 <template>
@@ -42,7 +52,7 @@ function preview() {
     <section class="auth-panel">
       <div class="auth-form-wrap">
         <RouterLink class="brand-mark auth-brand" to="/login"
-          >daybook</RouterLink
+          >Personal Expense Tracker</RouterLink
         >
         <p class="eyebrow auth-eyebrow">Account access</p>
         <h1>{{ registering ? "Create account" : "Sign in" }}</h1>
@@ -53,6 +63,22 @@ function preview() {
               : "Use your Daybook account to see your expenses."
           }}
         </p>
+
+        <button
+          v-if="!registering && connected"
+          class="demo-login-card"
+          type="button"
+          @click="fillDemoCredentials"
+        >
+          <span class="demo-login-heading">Try the live receipt reader</span>
+          <span class="demo-login-detail">
+            <span>Email</span><strong>{{ demoCredentials.email }}</strong>
+          </span>
+          <span class="demo-login-detail">
+            <span>Password</span><strong>{{ demoCredentials.password }}</strong>
+          </span>
+          <span class="demo-login-action">Click to fill sign-in form</span>
+        </button>
 
         <form class="auth-form" @submit.prevent="submit">
           <label class="field-label" for="email">Email address</label>

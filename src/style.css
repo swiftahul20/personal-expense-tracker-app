@@ -765,6 +765,66 @@ a {
   display: grid;
   gap: 15px;
 }
+.receipt-scan {
+  display: grid;
+  gap: 8px;
+  margin: -5px 0 18px;
+  padding: 14px;
+  border: 1px dashed #c9d9ce;
+  border-radius: 5px;
+  background: #f3f8f3;
+}
+.receipt-input {
+  display: none;
+}
+.receipt-scan-button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #cbdccf;
+  border-radius: 4px;
+  color: var(--forest);
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.receipt-scan-button:hover:not(:disabled) {
+  border-color: var(--forest);
+  background: #f8fbf8;
+}
+.receipt-scan-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.receipt-scan-help,
+.receipt-scan-note {
+  margin: 0;
+  color: #74817a;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+.receipt-scan-note {
+  padding-top: 8px;
+  border-top: 1px solid #dfe9e1;
+  color: #456b55;
+}
+.receipt-scan-error {
+  margin: 0;
+  justify-content: center;
+  text-align: left;
+}
+.receipt-spinner {
+  animation: receipt-spin 1s linear infinite;
+}
+@keyframes receipt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .amount-field {
   display: block;
   padding: 13px 14px 14px;
@@ -935,6 +995,9 @@ a {
   z-index: 1;
   color: white;
 }
+.auth-panel .auth-brand {
+  color: var(--ink);
+}
 .auth-brand .brand-symbol {
   color: #164638;
   background: #c9e8d5;
@@ -1045,6 +1108,57 @@ a {
   margin-top: 8px;
   color: #829087;
   font-size: 12px;
+}
+.demo-login-card {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  margin-top: 19px;
+  padding: 13px 14px;
+  border: 1px solid #cfe0d2;
+  border-radius: 5px;
+  color: var(--ink);
+  background: #f3f8f3;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+.demo-login-card:hover {
+  transform: translateY(-1px);
+  border-color: #91b49a;
+  background: #edf5ef;
+}
+.demo-login-card:focus-visible {
+  outline: 3px solid #ee795e;
+  outline-offset: 3px;
+}
+.demo-login-heading {
+  color: #285b41;
+  font-size: 12px;
+  font-weight: 700;
+}
+.demo-login-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #78877d;
+  font-size: 10px;
+}
+.demo-login-detail strong {
+  color: #385747;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.demo-login-action {
+  padding-top: 7px;
+  border-top: 1px solid #dce9de;
+  color: #547963;
+  font-size: 10px;
+  font-weight: 600;
 }
 .auth-form {
   display: grid;

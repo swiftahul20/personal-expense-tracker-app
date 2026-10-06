@@ -9,7 +9,7 @@ import { useThemeStore } from "./stores/theme";
 import type { Expense } from "./types";
 
 const auth = useAuthStore();
-const theme = useThemeStore();
+useThemeStore();
 const route = useRoute();
 const router = useRouter();
 const sheetOpen = ref(false);
@@ -60,8 +60,12 @@ async function signOut() {
 
   <div v-else class="app-shell">
     <header class="topbar">
-      <RouterLink class="brand-mark" to="/" aria-label="Daybook home">
-        <span>daybook</span>
+      <RouterLink
+        class="brand-mark"
+        to="/"
+        aria-label="Personal Expense Tracker home"
+      >
+        <span> Personal Expense Tracker </span>
       </RouterLink>
       <div class="topbar-actions">
         <span v-if="auth.previewMode" class="preview-badge"
@@ -84,7 +88,6 @@ async function signOut() {
           :is="Component"
           @edit="editExpense"
           @sign-out="signOut"
-          @toggle-theme="theme.toggle"
         />
       </RouterView>
     </main>
