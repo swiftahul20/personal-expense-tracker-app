@@ -1,0 +1,12 @@
+services:
+  expense-tracker:
+    image: swfitah20/expense-tracker-site:latest
+    container_name: expense-tracker-site
+    ports:
+      - "8083:80"
+    networks:
+      - shared-net
+
+networks:
+  shared-net:
+    external: true

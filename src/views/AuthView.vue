@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { LockKeyhole, Mail } from "@lucide/vue";
-import { computed, defineProps, ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { getApiBaseUrl } from "../lib/api";
 import { useAuthStore } from "../stores/auth";
