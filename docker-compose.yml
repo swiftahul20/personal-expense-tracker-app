@@ -1,6 +1,6 @@
 services:
   expense-tracker:
-    image: swfitah20/expense-tracker-site:latest
+    image: swiftah0/expense-tracker-site:latest
     container_name: expense-tracker-site
     networks:
       - shared-net
