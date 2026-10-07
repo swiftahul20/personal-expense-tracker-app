@@ -3,7 +3,7 @@ services:
     image: swiftah20/expense-tracker-site:latest
     container_name: expense-tracker-site
     ports:
-      - "8082:80"
+      - "8083:80"
     networks:
       - shared-net
 
