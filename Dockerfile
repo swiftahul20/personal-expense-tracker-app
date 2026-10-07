@@ -8,4 +8,4 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/caddy
 EXPOSE 80
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
+CMD ["nginx", "-g", "daemon off;"]
