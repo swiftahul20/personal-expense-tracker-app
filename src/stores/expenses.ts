@@ -75,7 +75,7 @@ export const useExpensesStore = defineStore("expenses", () => {
           if (value) query.set(key, value);
         }
         const result = await api.listExpenses(query);
-        expenses.value = result.expenses;
+        expenses.value = result?.expenses ?? [];
         page.value = result.page;
         totalPages.value = result.total_pages;
         totalCount.value = result.total;
@@ -209,6 +209,7 @@ export const useExpensesStore = defineStore("expenses", () => {
       description: createInput.description ?? "",
       date: createInput.date,
     };
+    if (!Array.isArray(expenses.value)) expenses.value = [];
     expenses.value.unshift(optimisticExpense);
     totalCount.value += 1;
     try {
