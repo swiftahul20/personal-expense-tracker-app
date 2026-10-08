@@ -1,9 +1,7 @@
 services:
-  expense-tracker:
-    image: swiftah20/expense-tracker-site:latest
-    container_name: expense-tracker-site
-    ports:
-      - "8083:80"
+  expense-web:
+    image: swiftah20/expense-web:latest
+    container_name: expense-web
     networks:
       - shared-net
 
